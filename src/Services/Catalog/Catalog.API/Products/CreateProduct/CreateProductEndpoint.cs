@@ -18,7 +18,6 @@
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .WithSummary("Create Product")
             .WithDescription("Create Product");
-            // chapter 6 odcinek 1
         }
     }
 }
