@@ -1,27 +1,37 @@
 using BuildingBlocks.Behaviors;
 
+// pomocnik do budowania aplikacji webowej
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
+// typeof - pozwala pobraæ opis klasy - metadane o typie - zwraca obiekt
+// System.Type z którego moge odczytac "pe³na nazwe typu", "czy to klasa czy interferjs", " przestrzen nazw".
+
+// Program - klasa g³ówna aplikacji - u nas jej nie ma ale kompilator j¹ tworzy
 var assembly = typeof(Program).Assembly;
+
+// builder.Services to kolekcja rejestracji us³ug - implementuje IServiceCollection.
+// Do kolekcji wrzucam wszystko co bedzie potem wstrzykiwane do konstruktorów
 builder.Services.AddMediatR(cfg =>
 {
-    cfg.RegisterServicesFromAssembly(assembly);
-    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>)); // Register the validation behavior
+    cfg.RegisterServicesFromAssembly(assembly); // skanuje wskazany assembly w poszukiwaniu handlerów i requestów
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>)); // Dodaje zachowanie w potoku "przechwwytywacz" ¿¹dañ np. logowanie, walidacja itd
 });
-builder.Services.AddValidatorsFromAssembly(assembly);
+builder.Services.AddValidatorsFromAssembly(assembly); // skanuje assembly w poszukiwaniu klas implementuj¹cych IValidator<T> i rejestruje je w kontenerze DI
 
-builder.Services.AddCarter();
+builder.Services.AddCarter(); // dodaje obs³ugê Carter - framework do tworzenia endpointów w stylu funkcyjnym
 
 builder.Services.AddMarten(options =>
 {
     options.Connection(builder.Configuration.GetConnectionString("Database")!);
 }).UseLightweightSessions();
 
-var app = builder.Build();
+var app = builder.Build(); // obiekt który ma w sobie wszystkie serwisy, middleware i konfiguracje
 
 // Configure the HTTP request pipeline.
-app.MapCarter();
+app.MapCarter(); // przechodzi przez wszystkie modu³y Cartera i mapuje endpointy
+// ka¿dey request przechodzi przez pipeline middleware 
+// useExceptionHandler to specjalna ga³¹Ÿ wywow³ywana wtedy gy wystapi wyjatek
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
     exceptionHandlerApp.Run(async context =>
@@ -49,5 +59,5 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         }
     });
 });
-app.Run();
+app.Run(); // uruchamia serwer Kestrel i nas³uchuje na ¿¹dania HTTP
 
